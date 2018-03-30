@@ -42,6 +42,8 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query\BaleZipQuery.cs" />
+    <Compile Include="Result\BaleZipResult.cs" />
+    <Compile Include="Result\BaseResult.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

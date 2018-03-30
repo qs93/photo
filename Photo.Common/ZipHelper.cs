@@ -5,11 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Photo.Model.Query;
+using Photo.Model.Result;
 using System.IO;
 using System.Web;
 using ICSharpCode.SharpZipLib.Zip;
 
-namespace Photo.Common.Files
+namespace Photo.Common
 {
     public class ZipHelper
     {
@@ -22,7 +23,7 @@ namespace Photo.Common.Files
         /// <param name="password">压缩包的密码，为空则没有</param>
         /// <param name="filesOrDirectoriesPaths"></param>
         /// <returns></returns>
-        public static bool BaleZip(BaleZipQuery query)
+        public static BaseResult BaleZip(BaleZipQuery query)
         {
             try
             {
@@ -44,18 +45,20 @@ namespace Photo.Common.Files
                 }
                 if (allFilesPath.Count > 0)
                 {
-                    if (File.Exists(query.ZipPath))  //该压缩包以存在时，先删除
+                    var zipPath = HttpContext.Current.Server.MapPath(query.ZipPath);
+                    var zipTopDirectoryPath = HttpContext.Current.Server.MapPath(query.ZipTopDirectoryPath);
+                    if (File.Exists(zipPath))  //该压缩包以存在时，先删除
                     {
-                        File.Delete(query.ZipPath);
+                        File.Delete(zipPath);
                     }
-                    ZipOutputStream zipOutputStream = new ZipOutputStream(File.Create(query.ZipPath));
+                    ZipOutputStream zipOutputStream = new ZipOutputStream(File.Create(zipPath));
                     zipOutputStream.SetLevel(query.ZipLevel);
                     zipOutputStream.Password = query.Password;
                     foreach (var file in allFilesPath)
                     {
                         if (file.Substring(file.Length - 1) == "")  //文件夹
                         {
-                            var fileName = file.Replace(query.ZipTopDirectoryPath, "");
+                            var fileName = file.Replace(zipTopDirectoryPath, "");
                             if (fileName.StartsWith(""))
                             {
                                 fileName = fileName.Substring(1);
@@ -69,7 +72,7 @@ namespace Photo.Common.Files
                             var fs = File.OpenRead(file);
                             var buffer = new byte[fs.Length];
                             fs.Read(buffer, 0, buffer.Length);
-                            var fileName = file.Replace(query.ZipTopDirectoryPath, "");
+                            var fileName = file.Replace(zipTopDirectoryPath, "");
                             if (fileName.StartsWith(""))
                             {
                                 fileName = fileName.Substring(0);
@@ -87,13 +90,22 @@ namespace Photo.Common.Files
                     zipOutputStream.Finish();
                     zipOutputStream.Close();
 
-                    return true;
+                    return new BaseResult();
                 }
-                return false;  //未找到可用的文件夹
+                return new BaseResult()
+                {
+                    Code = -200,
+                    Msg = "未找到可用文件或文件夹"
+                };
             }
             catch
             {
-                return false;
+                return new BaseResult()
+                {
+                    Code = -100,
+                    Msg = "生成失败，请稍后重试！",
+                    LogMsg = "生成Zip产生异常"
+                };
             }
         }
 
